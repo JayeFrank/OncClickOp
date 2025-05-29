@@ -662,12 +662,7 @@
                     case 'publish':
                         pageTitle.textContent = '发布内容';
                         pageDescription.textContent = '发布您的内容到各个平台';
-                        appContent.innerHTML = `
-                            <div style="text-align: center; padding: 40px; opacity: 0.7;">
-                                <h2>📤 发布功能</h2>
-                                <p>此功能正在开发中...</p>
-                            </div>
-                        `;
+                        this.renderPublishPage();
                         break;
                         
                     case 'website':
@@ -952,6 +947,478 @@
                 setTimeout(() => {
                     toast.classList.remove('show');
                 }, 3000);
+            }
+
+            /**
+             * Render the publish page with file upload and platform selection
+             * This creates a user-friendly interface for multi-platform publishing
+             */
+            renderPublishPage() {
+                const appContent = document.getElementById('appContent');
+                
+                // Create the publish interface
+                // Think of this like creating a form at the post office
+                appContent.innerHTML = `
+                    <div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+                        <!-- Step 1: File Selection -->
+                        <div class="publish-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 30px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 20px; color: #feca57;">📹 第一步：选择视频文件</h3>
+                            
+                            <div id="fileDropZone" style="
+                                border: 2px dashed rgba(255, 255, 255, 0.3);
+                                border-radius: 12px;
+                                padding: 40px;
+                                text-align: center;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                position: relative;
+                                overflow: hidden;
+                            " onmouseover="this.style.borderColor='rgba(255, 255, 255, 0.5)'" 
+                               onmouseout="this.style.borderColor='rgba(255, 255, 255, 0.3)'">
+                                <input type="file" id="videoFileInput" accept="video/*" style="display: none;">
+                                <p style="font-size: 18px; margin-bottom: 10px;">点击或拖拽视频文件到这里</p>
+                                <p style="font-size: 14px; opacity: 0.7;">支持格式：MP4, MOV, AVI, MKV</p>
+                            </div>
+                            
+                            <div id="selectedFileInfo" style="margin-top: 20px; display: none;">
+                                <p style="color: #4caf50;">✓ 已选择文件: <span id="selectedFileName"></span></p>
+                                <p style="font-size: 12px; opacity: 0.7;">文件大小: <span id="selectedFileSize"></span></p>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: Video Info -->
+                        <div class="publish-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 30px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 20px; color: #feca57;">✏️ 第二步：填写视频信息</h3>
+                            
+                            <div style="margin-bottom: 20px;">
+                                <label style="display: block; margin-bottom: 8px; font-size: 14px;">视频标题</label>
+                                <input type="text" id="videoTitle" placeholder="输入吸引人的标题..." style="
+                                    width: 100%;
+                                    padding: 12px;
+                                    border: 1px solid rgba(255, 255, 255, 0.2);
+                                    border-radius: 8px;
+                                    background: rgba(255, 255, 255, 0.1);
+                                    color: white;
+                                    font-size: 14px;
+                                    outline: none;
+                                    transition: all 0.3s ease;
+                                " onfocus="this.style.borderColor='#feca57'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.2)'">
+                            </div>
+                            
+                            <div>
+                                <label style="display: block; margin-bottom: 8px; font-size: 14px;">视频描述（选填）</label>
+                                <textarea id="videoDescription" placeholder="添加视频描述..." style="
+                                    width: 100%;
+                                    padding: 12px;
+                                    border: 1px solid rgba(255, 255, 255, 0.2);
+                                    border-radius: 8px;
+                                    background: rgba(255, 255, 255, 0.1);
+                                    color: white;
+                                    font-size: 14px;
+                                    outline: none;
+                                    resize: vertical;
+                                    min-height: 80px;
+                                    transition: all 0.3s ease;
+                                " onfocus="this.style.borderColor='#feca57'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.2)'"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Platform Selection -->
+                        <div class="publish-section" style="background: rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 30px; margin-bottom: 20px;">
+                            <h3 style="margin-bottom: 20px; color: #feca57;">🚀 第三步：选择发布平台</h3>
+                            
+                            <div id="platformList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <!-- Platforms will be loaded dynamically -->
+                                <p style="opacity: 0.7;">加载平台中...</p>
+                            </div>
+                            
+                            <div id="loginStatus" style="margin-top: 20px; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;">
+                                <p style="font-size: 12px; opacity: 0.8;">💡 提示：发布前请确保已登录对应平台</p>
+                            </div>
+                        </div>
+
+                        <!-- Publish Button -->
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button id="publishButton" onclick="window.app.handlePublish()" style="
+                                padding: 15px 40px;
+                                background: linear-gradient(45deg, #ff6b6b, #feca57);
+                                border: none;
+                                border-radius: 25px;
+                                color: white;
+                                font-size: 16px;
+                                font-weight: bold;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                                opacity: 0.5;
+                                pointer-events: none;
+                            " disabled>
+                                开始发布
+                            </button>
+                        </div>
+
+                        <!-- Publishing Status -->
+                        <div id="publishingStatus" style="margin-top: 30px; display: none;">
+                            <h3 style="margin-bottom: 20px;">📊 发布进度</h3>
+                            <div id="statusList">
+                                <!-- Status updates will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Set up event listeners for the publish page
+                this.setupPublishEventListeners();
+                
+                // Load publishable platforms
+                this.loadPublishablePlatforms();
+                
+                // Check login status
+                this.checkPlatformLoginStatus();
+            }
+
+            /**
+             * Set up event listeners for publish page elements
+             */
+            setupPublishEventListeners() {
+                // File input handling
+                const fileInput = document.getElementById('videoFileInput');
+                const dropZone = document.getElementById('fileDropZone');
+                
+                // Click to select file
+                dropZone.addEventListener('click', () => fileInput.click());
+                
+                // File selection
+                fileInput.addEventListener('change', (e) => this.handleFileSelection(e));
+                
+                // Drag and drop
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = '#feca57';
+                    dropZone.style.background = 'rgba(254, 202, 87, 0.1)';
+                });
+                
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    dropZone.style.background = 'transparent';
+                });
+                
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+                    dropZone.style.background = 'transparent';
+                    
+                    if (e.dataTransfer.files.length > 0) {
+                        fileInput.files = e.dataTransfer.files;
+                        this.handleFileSelection({ target: { files: e.dataTransfer.files } });
+                    }
+                });
+                
+                // Title input validation
+                document.getElementById('videoTitle').addEventListener('input', () => {
+                    this.validatePublishForm();
+                });
+            }
+
+            /**
+             * Handle file selection
+             */
+            async handleFileSelection(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                // Validate file type
+                const allowedTypes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'];
+                if (!allowedTypes.includes(file.type) && !file.name.match(/\.(mp4|mov|avi|mkv)$/i)) {
+                    this.showNotification('请选择支持的视频格式', 'error');
+                    return;
+                }
+                
+                // Show file info
+                document.getElementById('selectedFileInfo').style.display = 'block';
+                document.getElementById('selectedFileName').textContent = file.name;
+                document.getElementById('selectedFileSize').textContent = this.formatFileSize(file.size);
+                
+                // Upload file to backend
+                await this.uploadVideoFile(file);
+                
+                // Validate form
+                this.validatePublishForm();
+            }
+
+            /**
+             * Upload video file to backend
+             */
+            async uploadVideoFile(file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                try {
+                    this.showNotification('正在上传视频...', 'info');
+                    
+                    const response = await fetch(`${API_BASE_URL}/api/upload-video`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.uploadedVideoPath = result.path;
+                        this.showNotification('视频上传成功', 'success');
+                    } else {
+                        throw new Error(result.detail || '上传失败');
+                    }
+                } catch (error) {
+                    this.showNotification(`上传失败: ${error.message}`, 'error');
+                    console.error('Upload error:', error);
+                }
+            }
+
+            /**
+             * Format file size for display
+             */
+            formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+                return (bytes / 1024 / 1024 / 1024).toFixed(1) + ' GB';
+            }
+
+            /**
+             * Load publishable platforms
+             */
+            async loadPublishablePlatforms() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/publishable-apps`);
+                    const platforms = await response.json();
+                    
+                    const platformList = document.getElementById('platformList');
+                    platformList.innerHTML = '';
+                    
+                    platforms.forEach(platform => {
+                        const platformItem = document.createElement('div');
+                        platformItem.innerHTML = `
+                            <label style="
+                                display: flex;
+                                align-items: center;
+                                padding: 15px;
+                                background: rgba(255, 255, 255, 0.05);
+                                border-radius: 8px;
+                                cursor: pointer;
+                                transition: all 0.3s ease;
+                            " onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" 
+                               onmouseout="this.style.background='rgba(255, 255, 255, 0.05)'">
+                                <input type="checkbox" value="${platform.id}" class="platform-checkbox" style="margin-right: 10px;">
+                                <span style="font-size: 20px; margin-right: 10px;">${platform.icon}</span>
+                                <span>${platform.display_name}</span>
+                                <span id="login-${platform.id}" style="margin-left: auto; font-size: 12px;"></span>
+                            </label>
+                        `;
+                        platformList.appendChild(platformItem);
+                    });
+                    
+                    // Add change listeners to checkboxes
+                    document.querySelectorAll('.platform-checkbox').forEach(checkbox => {
+                        checkbox.addEventListener('change', () => this.validatePublishForm());
+                    });
+                    
+                } catch (error) {
+                    console.error('Failed to load platforms:', error);
+                }
+            }
+
+            /**
+             * Check platform login status
+             */
+            async checkPlatformLoginStatus() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/login-status`);
+                    const loginStatus = await response.json();
+                    
+                    Object.entries(loginStatus).forEach(([platform, status]) => {
+                        const statusElement = document.getElementById(`login-${platform}`);
+                        if (statusElement) {
+                            if (status.logged_in) {
+                                statusElement.innerHTML = '<span style="color: #4caf50;">✓ 已登录</span>';
+                            } else {
+                                statusElement.innerHTML = '<span style="color: #ff6b6b;">未登录</span>';
+                            }
+                        }
+                    });
+                } catch (error) {
+                    console.error('Failed to check login status:', error);
+                }
+            }
+
+            /**
+             * Validate publish form
+             */
+            validatePublishForm() {
+                const title = document.getElementById('videoTitle').value.trim();
+                const hasFile = this.uploadedVideoPath;
+                const selectedPlatforms = document.querySelectorAll('.platform-checkbox:checked');
+                
+                const publishButton = document.getElementById('publishButton');
+                
+                if (title && hasFile && selectedPlatforms.length > 0) {
+                    publishButton.disabled = false;
+                    publishButton.style.opacity = '1';
+                    publishButton.style.pointerEvents = 'auto';
+                } else {
+                    publishButton.disabled = true;
+                    publishButton.style.opacity = '0.5';
+                    publishButton.style.pointerEvents = 'none';
+                }
+            }
+
+            /**
+             * Handle publish button click
+             */
+            async handlePublish() {
+                const title = document.getElementById('videoTitle').value.trim();
+                const description = document.getElementById('videoDescription').value.trim();
+                const selectedPlatforms = Array.from(document.querySelectorAll('.platform-checkbox:checked'))
+                    .map(cb => cb.value);
+                
+                if (!this.uploadedVideoPath) {
+                    this.showNotification('请先上传视频文件', 'error');
+                    return;
+                }
+                
+                // Prepare request
+                const publishRequest = {
+                    video_path: this.uploadedVideoPath,
+                    title: title,
+                    description: description,
+                    platforms: selectedPlatforms
+                };
+                
+                try {
+                    // Disable publish button
+                    const publishButton = document.getElementById('publishButton');
+                    publishButton.disabled = true;
+                    publishButton.textContent = '发布中...';
+                    
+                    // Show status section
+                    document.getElementById('publishingStatus').style.display = 'block';
+                    
+                    // Send publish request
+                    const response = await fetch(`${API_BASE_URL}/api/publish`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(publishRequest)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.showNotification(result.message, 'success');
+                        
+                        // Start monitoring publish status
+                        this.monitorPublishStatus(result.job_id);
+                    } else {
+                        throw new Error(result.detail || '发布失败');
+                    }
+                    
+                } catch (error) {
+                    this.showNotification(`发布失败: ${error.message}`, 'error');
+                    
+                    // Re-enable button
+                    const publishButton = document.getElementById('publishButton');
+                    publishButton.disabled = false;
+                    publishButton.textContent = '开始发布';
+                }
+            }
+
+            /**
+             * Monitor publishing status
+             */
+            async monitorPublishStatus(jobId) {
+                const statusList = document.getElementById('statusList');
+                statusList.innerHTML = '';
+                
+                const checkInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/publish-status/${jobId}`);
+                        const result = await response.json();
+                        
+                        // Update status display
+                        statusList.innerHTML = '';
+                        let allComplete = true;
+                        
+                        Object.values(result.status).forEach(platformStatus => {
+                            const statusItem = document.createElement('div');
+                            statusItem.style.cssText = 'padding: 10px; margin-bottom: 5px; background: rgba(255, 255, 255, 0.05); border-radius: 8px;';
+                            
+                            let statusIcon = '⏳';
+                            let statusColor = 'orange';
+                            
+                            switch (platformStatus.status) {
+                                case 'success':
+                                    statusIcon = '✅';
+                                    statusColor = '#4caf50';
+                                    break;
+                                case 'failed':
+                                    statusIcon = '❌';
+                                    statusColor = '#ff6b6b';
+                                    break;
+                                case 'uploading':
+                                    statusIcon = '📤';
+                                    statusColor = '#2196f3';
+                                    allComplete = false;
+                                    break;
+                                case 'pending':
+                                    statusIcon = '⏳';
+                                    statusColor = 'orange';
+                                    allComplete = false;
+                                    break;
+                            }
+                            
+                            statusItem.innerHTML = `
+                                <span style="color: ${statusColor};">${statusIcon}</span>
+                                <span style="margin-left: 10px;">${this.getPlatformName(platformStatus.platform)}</span>
+                                <span style="margin-left: 10px; opacity: 0.7; font-size: 12px;">${platformStatus.message || ''}</span>
+                            `;
+                            
+                            statusList.appendChild(statusItem);
+                        });
+                        
+                        // If all complete, stop monitoring
+                        if (allComplete) {
+                            clearInterval(checkInterval);
+                            
+                            // Re-enable publish button
+                            const publishButton = document.getElementById('publishButton');
+                            publishButton.disabled = false;
+                            publishButton.textContent = '开始发布';
+                            
+                            this.showNotification('发布任务完成', 'success');
+                        }
+                        
+                    } catch (error) {
+                        console.error('Failed to check publish status:', error);
+                    }
+                }, 2000); // Check every 2 seconds
+                
+                // Stop checking after 10 minutes
+                setTimeout(() => clearInterval(checkInterval), 600000);
+            }
+
+            /**
+             * Get platform display name
+             */
+            getPlatformName(platformId) {
+                const names = {
+                    'xiaohongshu': '小红书',
+                    'bilibili': '哔哩哔哩',
+                    'weibo': '微博',
+                    'tiktok': 'TikTok',
+                    'toutiao': '头条'
+                };
+                return names[platformId] || platformId;
             }
         }
 

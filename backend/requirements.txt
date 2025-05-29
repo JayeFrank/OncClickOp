@@ -1,9 +1,9 @@
-# Desktop App Framework Backend Dependencies - Version 0.1
+# Desktop App Framework Backend Dependencies - Version 0.2
 
 # Core Framework
 fastapi==0.104.1      # Modern, fast web framework for building APIs
 uvicorn==0.24.0      # Lightning-fast ASGI server
-python-multipart==0.0.6  # Required for form data handling
+python-multipart==0.0.6  # Required for form data handling and file uploads
 
 # Data Validation
 pydantic==2.5.0      # Data validation using Python type annotations
@@ -11,8 +11,8 @@ pydantic==2.5.0      # Data validation using Python type annotations
 # Async Support
 aiofiles==23.2.1     # Async file operations (useful for future features)
 
-# Selenium for Login Monitoring
-selenium==4.15.2     # Web automation for monitoring Xiaohongshu login
+# Selenium for Login Monitoring and Publishing
+selenium==4.15.2     # Web automation for monitoring login and publishing
 webdriver-manager==4.0.1  # Automatic management of WebDriver binaries
 
 # Optional: Enhanced Features
