@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop App Framework - Enhanced</title>
+    <style>
+        /* ===== CSS Variables for Easy Theming ===== */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #ff6b9d 0%, #c44569 30%, #6c5ce7 70%, #a29bfe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-bg-hover: rgba(255, 255, 255, 0.15);
+            --border-color: rgba(255, 255, 255, 0.2);
+            --text-primary: white;
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--primary-gradient);
+            color: var(--text-primary);
+        }
+
+        /* Loading Screen - Shows while connecting to backend */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--primary-gradient);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            margin-top: 20px;
+            font-size: 18px;
+            opacity: 0.8;
+        }
+
+        /* Main App Container */
+        .app-container {
+            display: flex;
+            height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 240px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition-smooth);
+        }
+
+        .sidebar:hover {
+            background: var(--glass-bg-hover);
+        }
+
+        /* User Profile Section */
+        .user-profile {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition-smooth);
+            cursor: pointer;
+        }
+
+        .user-profile:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .user-avatar:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .user-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .user-info p {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Navigation Menu */
+        .nav-menu {
+            flex: 1;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background: var(--glass-bg-hover);
+            border-left-color: #feca57;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-left-color: #ff6b6b;
+        }
+
+        /* Notification Badge */
+        .nav-item .badge {
+            position: absolute;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Header */
+        .header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-content h1 {
+            font-size: 24px;
+            font-weight: 300;
+            margin-bottom: 8px;
+            background: linear-gradient(45deg, #feca57, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-content p {
+            opacity: 0.8;
+            font-size: 14px;
+        }
+
+        /* Connection Status Indicator */
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.offline {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        /* App Grid */
+        .app-grid {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .category-section {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+        }
+
+        .app-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: var(--glass-bg);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, transparent 0%, rgba(255, 255, 255, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .app-item:hover::before {
+            opacity: 1;
+        }
+
+        .app-item:hover {
+            transform: translateY(-8px) scale(1.05);
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .app-item:hover .app-icon {
+            transform: rotate(10deg) scale(1.1);
+        }
+
+        .app-name {
+            font-size: 12px;
+            text-align: center;
+            font-weight: 500;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Notification Toast */
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px) translateX(100px);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 250px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .notification-toast.show {
+            opacity: 1;
+            transform: translateY(0) translateX(0);
+        }
+
+        .notification-toast.success {
+            background: rgba(76, 175, 80, 0.9);
+        }
+
+        .notification-toast.error {
+            background: rgba(244, 67, 54, 0.9);
+        }
+
+        .notification-toast.info {
+            background: rgba(33, 150, 243, 0.9);
+        }
+
+        /* Footer */
+        .footer-message {
+            text-align: center;
+            padding: 30px;
+            font-size: 14px;
+            opacity: 0.6;
+            font-style: italic;
+        }
+
+        /* Scrollbar Styling */
+        .app-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .app-grid::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .app-grid::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #ff6b9d, #c44569);
+            border-radius: 3px;
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Error State */
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.7;
+        }
+
+        .error-message h2 {
+            margin-bottom: 10px;
+            color: #ff6b6b;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .user-info, .nav-item span, .footer-message {
+                display: none;
+            }
+            
+            .grid-container {
+                grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader"></div>
+        <p class="loading-text">正在连接到服务器...</p>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar glass-effect">
+            <!-- User Profile Section -->
+            <div class="user-profile" id="userProfile">
+                <div class="user-avatar" id="userAvatar">U</div>
+                <div class="user-info">
+                    <h3 id="userName">加载中...</h3>
+                    <p id="userEmail">用户账号</p>
+                </div>
+            </div>
+
+            <!-- Navigation Menu -->
+            <nav class="nav-menu">
+                <div class="nav-item active" data-page="home">
+                    <span>🏠 主页</span>
+                    <span class="badge" id="appCount">0</span>
+                </div>
+                <div class="nav-item" data-page="publish">
+                    <span>📤 发布</span>
+                </div>
+                <div class="nav-item" data-page="website">
+                    <span>🌐 网站</span>
+                </div>
+                <div class="nav-item" data-page="data">
+                    <span>📊 数据</span>
+                </div>
+            </nav>
+
+            <!-- Settings -->
+            <div style="padding: 20px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <div class="nav-item" data-page="settings">
+                    <span>⚙️ 设置</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <div class="header">
+                <div class="header-content">
+                    <h1 id="pageTitle">应用启动器</h1>
+                    <p id="pageDescription">点击应用图标即可启动</p>
+                </div>
+                <div class="connection-status">
+                    <div class="status-indicator" id="statusIndicator"></div>
+                    <span id="connectionText">已连接</span>
+                </div>
+            </div>
+
+            <!-- App Grid -->
+            <div class="app-grid" id="appGrid">
+                <div id="appContent">
+                    <!-- Apps will be dynamically loaded here -->
+                    <div class="loading-text" style="text-align: center; padding: 40px;">
+                        正在加载应用列表...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification-toast" id="notificationToast">
+        <span id="notificationIcon">✓</span>
+        <span id="notificationText"></span>
+    </div>
+
+    <script>
+        /**
+         * Desktop App Framework - Enhanced Frontend
+         * This JavaScript code manages the entire frontend application
+         * and communicates with our FastAPI backend
+         */
+
+        // Configuration - Update this if your backend runs on a different port
+        const API_BASE_URL = 'http://localhost:8000';
+
+        class DesktopAppFramework {
+            constructor() {
+                // Store application state
+                this.apps = [];
+                this.currentPage = 'home';
+                this.isConnected = false;
+                this.userProfile = null;
+                
+                // Initialize the application
+                this.init();
+            }
+
+            /**
+             * Initialize the application
+             * This method sets up event listeners and loads initial data
+             */
+            async init() {
+                // Check backend connection first
+                await this.checkBackendConnection();
+                
+                // Set up event listeners
+                this.setupEventListeners();
+                
+                // Load initial data
+                if (this.isConnected) {
+                    await this.loadUserProfile();
+                    await this.loadApps();
+                }
+                
+                // Hide loading screen
+                setTimeout(() => {
+                    document.getElementById('loadingScreen').classList.add('hidden');
+                }, 500);
+            }
+
+            /**
+             * Check if the backend is running and accessible
+             */
+            async checkBackendConnection() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'healthy') {
+                        this.isConnected = true;
+                        this.updateConnectionStatus(true);
+                        this.showNotification('成功连接到服务器', 'success');
+                    }
+                } catch (error) {
+                    console.error('Backend connection failed:', error);
+                    this.isConnected = false;
+                    this.updateConnectionStatus(false);
+                    this.showNotification('无法连接到服务器，请确保后端正在运行', 'error');
+                    
+                    // Show error message in app grid
+                    document.getElementById('appContent').innerHTML = `
+                        <div class="error-message">
+                            <h2>⚠️ 连接失败</h2>
+                            <p>无法连接到后端服务器</p>
+                            <p style="margin-top: 10px; font-size: 12px;">
+                                请确保在终端中运行了: <code>cd backend && python run.py</code>
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+
+            /**
+             * Update the connection status indicator
+             */
+            updateConnectionStatus(connected) {
+                const indicator = document.getElementById('statusIndicator');
+                const text = document.getElementById('connectionText');
+                
+                if (connected) {
+                    indicator.classList.remove('offline');
+                    text.textContent = '已连接';
+                } else {
+                    indicator.classList.add('offline');
+                    text.textContent = '未连接';
+                }
+            }
+
+            /**
+             * Set up all event listeners
+             */
+            setupEventListeners() {
+                // Navigation clicks
+                document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+                    item.addEventListener('click', (e) => this.handleNavigation(e));
+                });
+
+                // User profile click
+                document.getElementById('userProfile').addEventListener('click', () => {
+                    this.showNotification('用户设置功能开发中...', 'info');
+                });
+
+                // Retry connection when clicking on error message
+                document.addEventListener('click', (e) => {
+                    if (e.target.closest('.error-message')) {
+                        this.init();
+                    }
+                });
+            }
+
+            /**
+             * Handle navigation between pages
+             */
+            handleNavigation(event) {
+                const navItem = event.currentTarget;
+                const page = navItem.dataset.page;
+                
+                // Update active state
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+                navItem.classList.add('active');
+                
+                // Update current page
+                this.currentPage = page;
+                
+                // Update page content based on selection
+                this.updatePageContent(page);
+            }
+
+            /**
+             * Update page content based on navigation
+             */
+            updatePageContent(page) {
+                const pageTitle = document.getElementById('pageTitle');
+                const pageDescription = document.getElementById('pageDescription');
+                const appContent = document.getElementById('appContent');
+                
+                switch (page) {
+                    case 'home':
+                        pageTitle.textContent = '应用启动器';
+                        pageDescription.textContent = '点击应用图标即可启动';
+                        if (this.isConnected) {
+                            this.renderApps();
+                        }
+                        break;
+                        
+                    case 'publish':
+                        pageTitle.textContent = '发布内容';
+                        pageDescription.textContent = '发布您的内容到各个平台';
+                        appContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                                <h2>📤 发布功能</h2>
+                                <p>此功能正在开发中...</p>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'website':
+                        pageTitle.textContent = '网站管理';
+                        pageDescription.textContent = '管理您的网站和链接';
+                        appContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                                <h2>🌐 网站管理</h2>
+                                <p>此功能正在开发中...</p>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'data':
+                        pageTitle.textContent = '数据分析';
+                        pageDescription.textContent = '查看详细的数据统计';
+                        appContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                                <h2>📊 数据分析</h2>
+                                <p>此功能正在开发中...</p>
+                            </div>
+                        `;
+                        break;
+                        
+                    case 'settings':
+                        pageTitle.textContent = '系统设置';
+                        pageDescription.textContent = '配置您的应用程序';
+                        appContent.innerHTML = `
+                            <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                                <h2>⚙️ 设置</h2>
+                                <p>此功能正在开发中...</p>
+                            </div>
+                        `;
+                        break;
+                }
+            }
+
+            /**
+             * Load user profile from backend
+             */
+            async loadUserProfile() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/user/profile`);
+                    const profile = await response.json();
+                    
+                    this.userProfile = profile;
+                    
+                    // Update UI with user info
+                    document.getElementById('userName').textContent = profile.display_name;
+                    document.getElementById('userEmail').textContent = profile.email || '用户账号';
+                    document.getElementById('userAvatar').textContent = profile.avatar || 'U';
+                } catch (error) {
+                    console.error('Failed to load user profile:', error);
+                }
+            }
+
+            /**
+             * Load apps from backend
+             */
+            async loadApps() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/api/apps`);
+                    const apps = await response.json();
+                    
+                    this.apps = apps;
+                    
+                    // Update app count badge
+                    document.getElementById('appCount').textContent = apps.length;
+                    
+                    // Render apps if on home page
+                    if (this.currentPage === 'home') {
+                        this.renderApps();
+                    }
+                } catch (error) {
+                    console.error('Failed to load apps:', error);
+                    this.showNotification('加载应用失败', 'error');
+                }
+            }
+
+            /**
+             * Render apps in the grid
+             */
+            renderApps() {
+                const appContent = document.getElementById('appContent');
+                
+                if (this.apps.length === 0) {
+                    appContent.innerHTML = `
+                        <div style="text-align: center; padding: 40px; opacity: 0.7;">
+                            <p>暂无应用</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Group apps by category
+                const categories = {};
+                this.apps.forEach(app => {
+                    if (!categories[app.category]) {
+                        categories[app.category] = [];
+                    }
+                    categories[app.category].push(app);
+                });
+                
+                // Render apps by category
+                let html = '';
+                Object.entries(categories).forEach(([category, apps]) => {
+                    html += `
+                        <div class="category-section">
+                            <h3 class="category-title">${this.getCategoryName(category)}</h3>
+                            <div class="grid-container">
+                    `;
+                    
+                    apps.forEach((app, index) => {
+                        html += `
+                            <div class="app-item floating" 
+                                 style="animation-delay: ${index * 0.1}s;"
+                                 data-app-name="${app.name}">
+                                <div class="app-icon" style="background: ${app.background};">
+                                    ${app.icon}
+                                </div>
+                                <div class="app-name">${app.display_name}</div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                appContent.innerHTML = html;
+                
+                // Add click handlers to app items
+                document.querySelectorAll('.app-item').forEach(item => {
+                    item.addEventListener('click', (e) => this.handleAppClick(e));
+                });
+            }
+
+            /**
+             * Get localized category name
+             */
+            getCategoryName(category) {
+                const names = {
+                    'social': '社交媒体',
+                    'productivity': '生产力工具',
+                    'entertainment': '娱乐',
+                    'utility': '实用工具',
+                    'browser': '浏览器',
+                    'portal': '门户网站',
+                    'news': '新闻资讯',
+                    'knowledge': '知识平台',
+                    'cloud': '云服务'
+                };
+                return names[category] || category;
+            }
+
+            /**
+             * Handle app click - launch the application
+             */
+            async handleAppClick(event) {
+                const appItem = event.currentTarget;
+                const appName = appItem.dataset.appName;
+                
+                // Visual feedback
+                appItem.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    appItem.style.transform = '';
+                }, 200);
+                
+                // Show launching notification
+                this.showNotification(`正在启动 ${appName}...`, 'info');
+                
+                try {
+                    // Call backend API to open the app
+                    const response = await fetch(`${API_BASE_URL}/api/open-app`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ app_name: appName })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Special handling for popup action
+                        if (result.action === 'open_popup') {
+                            // Open Xiaohongshu login in popup window
+                            const popup = window.open(
+                                'https://creator.xiaohongshu.com/login',
+                                'XiaohongshuLogin',
+                                'width=800,height=600,top=100,left=100'
+                            );
+                            
+                            if (popup) {
+                                this.showNotification(result.message, 'success');
+                                
+                                // Start monitoring login status
+                                this.monitorLoginStatus();
+                            } else {
+                                this.showNotification('请允许弹出窗口以继续登录', 'error');
+                            }
+                        } else {
+                            this.showNotification(result.message, 'success');
+                        }
+                    } else {
+                        this.showNotification(result.message, 'error');
+                    }
+                } catch (error) {
+                    console.error('Failed to open app:', error);
+                    this.showNotification(`无法启动 ${appName}`, 'error');
+                }
+            }
+
+            /**
+             * Monitor login status after opening popup
+             */
+            async monitorLoginStatus() {
+                const checkInterval = setInterval(async () => {
+                    try {
+                        const response = await fetch(`${API_BASE_URL}/api/login-status`);
+                        const status = await response.json();
+                        
+                        if (status.logged_in) {
+                            clearInterval(checkInterval);
+                            this.showNotification(
+                                `登录成功！用户: ${status.username}`, 
+                                'success'
+                            );
+                            
+                            // Update UI to show logged in state
+                            this.updateLoginState(status);
+                        }
+                    } catch (error) {
+                        console.error('Error checking login status:', error);
+                    }
+                }, 2000); // Check every 2 seconds
+                
+                // Stop checking after 5 minutes
+                setTimeout(() => clearInterval(checkInterval), 300000);
+            }
+
+            /**
+             * Update UI to reflect login state
+             */
+            updateLoginState(loginData) {
+                // You can expand this to update UI elements
+                console.log('User logged in:', loginData);
+                
+                // Example: Update header to show login info
+                const pageDescription = document.getElementById('pageDescription');
+                pageDescription.textContent = `已登录小红书 - ${loginData.username}`;
+            }
+
+            /**
+             * Show notification toast
+             */
+            showNotification(message, type = 'info') {
+                const toast = document.getElementById('notificationToast');
+                const icon = document.getElementById('notificationIcon');
+                const text = document.getElementById('notificationText');
+                
+                // Set content
+                text.textContent = message;
+                
+                // Set icon based on type
+                const icons = {
+                    'success': '✓',
+                    'error': '✗',
+                    'info': 'ℹ'
+                };
+                icon.textContent = icons[type] || 'ℹ';
+                
+                // Set style class
+                toast.className = `notification-toast ${type}`;
+                
+                // Show notification
+                toast.classList.add('show');
+                
+                // Hide after 3 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // Initialize the application when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = new DesktopAppFramework();
+            console.log('Desktop App Framework initialized');
+        });
+
+        // Add parallax effect on mouse move
+        document.addEventListener('mousemove', (e) => {
+            const cursor = { x: e.clientX, y: e.clientY };
+            
+            document.querySelectorAll('.floating').forEach((el, index) => {
+                const speed = (index + 1) * 0.02;
+                const x = (cursor.x * speed);
+                const y = (cursor.y * speed);
+                
+                el.style.transform = `translate(${x * 0.1}px, ${y * 0.1}px)`;
+            });
+        });
+    </script>
+</body>
+</html>
